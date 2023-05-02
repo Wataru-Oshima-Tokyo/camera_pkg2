@@ -38,4 +38,4 @@ def generate_launch_description():
     # Add the commands to the launch description
     ld.add_action(camera_node)
     ld.add_action(ros_image)
-    return 
+    return ld
