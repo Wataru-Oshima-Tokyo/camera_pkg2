@@ -32,6 +32,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 add_executable(ros_img src/ros_image.cpp)
 ament_target_dependencies(ros_img rclcpp std_msgs OpenCV sensor_msgs image_transport cv_bridge)
 
+add_executable(ros_img_cuda src/ros_image_cuda.cpp)
+ament_target_dependencies(ros_img_cuda rclcpp std_msgs OpenCV sensor_msgs image_transport cv_bridge)
 
 install(TARGETS
   ros_img

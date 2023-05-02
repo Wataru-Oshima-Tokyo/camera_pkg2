@@ -1,4 +1,4 @@
-
+#include <deque>
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
 // Include opencv2
@@ -6,6 +6,9 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/videoio.hpp>
+#include <opencv2/cudaarithm.hpp> // Include CUDA module
+#include <opencv2/cudawarping.hpp> // Include CUDA module
+
 
 // Include CvBridge, Image Transport, Image msg
 #include "image_transport/image_transport.hpp"
@@ -13,12 +16,20 @@
 #include "sensor_msgs/msg/image.hpp"
 
 
+
+
+
+
 using namespace cv;
 using std::placeholders::_1;
 struct timespec start, stop;
 double fstart, fstop;
 static const std::string IMAGE_TOPIC = "image_raw";
-Mat src, src_hsv, dst;
+static const size_t FPS_SAMPLE_SIZE = 10; // Number of frames to average for FPS calculation
+std::deque<double> frame_times;
+double avg_frame_time;
+Mat src, dst;
+cuda::GpuMat src_gpu, src_hsv_gpu; // Declare GpuMat
 
 class imageSubscriber : public rclcpp::Node{
 
@@ -27,12 +38,13 @@ class imageSubscriber : public rclcpp::Node{
             subscription_ = this->create_subscription<sensor_msgs::msg::Image>(IMAGE_TOPIC,1000, std::bind(&imageSubscriber::image_callback, this, _1));
 
         }
+
     private:
-	rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr subscription_;
+    	rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr subscription_;
 
 
         void image_callback(const sensor_msgs::msg::Image::SharedPtr msg) {
-        	clock_gettime(CLOCK_MONOTONIC, &start); fstart=(double)start.tv_sec + ((double)start.tv_nsec/1000000000.0);
+            clock_gettime(CLOCK_MONOTONIC, &start); fstart=(double)start.tv_sec + ((double)start.tv_nsec/1000000000.0);
         	std_msgs::msg::Header msg_header = msg->header;
         	std::string frame_id = msg_header.frame_id.c_str();
         	// ROS_INFO_STREAM("New Image from " << frame_id);
@@ -48,19 +60,34 @@ class imageSubscriber : public rclcpp::Node{
             		return;
         	}
 
-        	src = cv_ptr->image;
-        	dst.create(src.size(), src.type());
-        	//cvtColor(src, src_gray, COLOR_BGR2GRAY);
-        	cvtColor(src, src_hsv, COLOR_BGR2HSV);
-        
-        	// namedWindow(window_name, WINDOW_AUTOSIZE );
-        	// CannyThreshold(0, 0);
+            src = cv_ptr->image;
+            dst.create(src.size(), src.type());
+            
+            src_gpu.upload(src); // Upload Mat to GpuMat
+            cuda::cvtColor(src_gpu, src_hsv_gpu, COLOR_BGR2HSV); // Use CUDA function for color conversion
+            
+            src_hsv_gpu.download(src); // Download GpuMat to Mat
+            
+            clock_gettime(CLOCK_MONOTONIC, &stop); fstop=(double)stop.tv_sec + ((double)stop.tv_nsec/1000000000.0);
+        	double frame_time = fstop - fstart;
 
-        	clock_gettime(CLOCK_MONOTONIC, &stop); fstop=(double)stop.tv_sec + ((double)stop.tv_nsec/1000000000.0);
-        	std::string fps= "FPS: " + std::to_string(1/(fstop-fstart));
+            // Calculate moving average of frame times
+            frame_times.push_back(frame_time);
+            if (frame_times.size() > FPS_SAMPLE_SIZE) {
+                frame_times.pop_front();
+            }
+
+            avg_frame_time = 0;
+            for (const auto &time : frame_times) {
+                avg_frame_time += time;
+            }
+            avg_frame_time /= frame_times.size();
+
+            double fps = 1.0 / avg_frame_time;
+            std::string fps_text = "FPS: " + std::to_string(fps);
 
         	putText(src, //target image
-            		fps, //text
+            		fps_text, //text
             		Point(10, 30), //top-left position
             		FONT_HERSHEY_DUPLEX,
             		1.0,
@@ -68,15 +95,16 @@ class imageSubscriber : public rclcpp::Node{
             		2);
         	cv::imshow("src", src);
         	cv::waitKey(3);   
-    	}
+        }
 };
 
+// ...
 
- int main(int argc, char* argv[]){
+int main(int argc, char* argv[]){
 
     rclcpp::init(argc, argv);
     rclcpp::spin(std::make_shared<imageSubscriber>());
     rclcpp::shutdown();
     destroyAllWindows();
     return 0;
- }
+}
