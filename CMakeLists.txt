@@ -25,6 +25,7 @@ find_package(sensor_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Coordinate.msg"
+  DEPENDENCIES std_msgs sensor_msgs
 )
 
 
