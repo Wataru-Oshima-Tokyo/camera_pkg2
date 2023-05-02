@@ -8,6 +8,7 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/cudaarithm.hpp> // Include CUDA module
 #include <opencv2/cudawarping.hpp> // Include CUDA module
+#include <opencv2/cudaimgproc.hpp> // Include CUDA imgproc module
 
 
 // Include CvBridge, Image Transport, Image msg
