@@ -23,7 +23,7 @@ def generate_launch_description():
         namespace = ns,
         name = 'usb_cam_node',
         # namespace=ns,
-        parameters=[calibration_file]
+        # parameters=[calibration_file]
         )
     ros_image = Node(
         package='camera_pkg2', 
