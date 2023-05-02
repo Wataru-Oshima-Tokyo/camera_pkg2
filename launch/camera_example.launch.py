@@ -15,6 +15,7 @@ def generate_launch_description():
         'param',
         'camera_ext.yaml'
     )
+    print(f"calibration file: {calibration_file}")
     ns = "mg400"
     camera_node = Node(
         package='usb_cam', 
@@ -27,10 +28,10 @@ def generate_launch_description():
         )
     ros_image = Node(
         package='camera_pkg2', 
-        executable='ros_image', 
+        executable='ros_img', 
         output='screen',
         namespace = ns,
-        name = "ros_image"
+        name = "ros_img"
         )
 
     ld = LaunchDescription()
