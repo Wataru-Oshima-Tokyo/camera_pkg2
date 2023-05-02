@@ -1,22 +1,24 @@
 
-  #include <memory>
-  #include "rclcpp/rclcpp.hpp"
- // Include opencv2
- #include <opencv2/imgproc/imgproc.hpp>
- #include <opencv2/highgui/highgui.hpp>
- #include <opencv2/core/core.hpp>
- #include <opencv2/videoio.hpp>
+#include <memory>
+#include "rclcpp/rclcpp.hpp"
+// Include opencv2
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/videoio.hpp>
 
- // Include CvBridge, Image Transport, Image msg
- #include <image_transport/image_transport.h>
- #include <cv_bridge/cv_bridge.h>
- #include <sensor_msgs/msg/image.h>
-    using namespace cv;
-    using std::placeholders::_1;
-    struct timespec start, stop;
-    double fstart, fstop;
-    static const std::string IMAGE_TOPIC = "/color/image_rect_raw";
-    Mat src, src_hsv, dst;
+// Include CvBridge, Image Transport, Image msg
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/msg/image.h>
+
+
+using namespace cv;
+using std::placeholders::_1;
+struct timespec start, stop;
+double fstart, fstop;
+static const std::string IMAGE_TOPIC = "image_raw";
+Mat src, src_hsv, dst;
 
 class imageSubscriber : public rclcpp::Node{
 

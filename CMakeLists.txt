@@ -42,6 +42,7 @@ install(
   DIRECTORY
     launch
     msg
+    param
   DESTINATION
     share/${PROJECT_NAME}/
 )
